@@ -43,7 +43,7 @@ class window(QtGui.QWidget):
 
 	def initUI(self):
 		self.setFixedHeight(400)
-		self.setFixedWidth(900)
+		self.setFixedWidth(700)
 		self.setWindowTitle("sHealth Step Viewer")
 
 		self.status = QtGui.QLabel("Loading step data...", self)
