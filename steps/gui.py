@@ -19,6 +19,10 @@ class execution_thread(QThread):
 		self.step_data_files = data.getFileNames()
 		# Only loading in the first file for now
 		self.step_data = data.stepData(data.readEntries(self.step_data_files[0]))
+
+		self.step_data.collapse("day") # Combine all entries of the same day
+		self.step_data.collapse("month") # Combine all entries of the same month
+
 		self.emit(SIGNAL("send_data(PyQt_PyObject)"), self.step_data)
 		
 	def run(self):
@@ -49,6 +53,7 @@ class window(QtGui.QWidget):
 		self.entrySelector = QtGui.QListWidget(self)
 		self.entrySelector.move(10, 40)
 		self.entrySelector.itemClicked.connect(self.entrySelected)
+		self.entrySelector.setFixedHeight(300)
 
 		self.calorieLabel = QLabel("Calories Burned", self)
 		self.calorieLabel.setFixedWidth(150)
@@ -86,22 +91,61 @@ class window(QtGui.QWidget):
 		self.speedValue.move(450, 200)
 		self.speedValue.setEnabled(False)
 
+		self.monthFilterButton = QtGui.QPushButton("Month", self)
+		self.monthFilterButton.move(230, 350)
+		self.monthFilterButton.clicked.connect(self.filterMonth)
+
+		self.dayFilterButton = QtGui.QPushButton("Day", self)
+		self.dayFilterButton.move(170, 350)
+		self.dayFilterButton.clicked.connect(self.filterDay)
+
+		self.origFilterButton = QtGui.QPushButton("Original", self)
+		self.origFilterButton.move(10, 350)
+		self.origFilterButton.clicked.connect(self.filterOriginal)
+
+		self.filterLabel = QtGui.QLabel("Filter by:", self)
+		self.filterLabel.move(120, 357)
+
 		self.show()
 		QtCore.QObject.connect(self.thread, QtCore.SIGNAL("send_data(PyQt_PyObject)"), self.setData)
 		self.thread.start()
 
+	def filterMonth(self):
+		self.collapse_state = "month"
+		self.entrySelector.clear()
+		self.entrySelector.addItems(self.data.getNames("month"))
+
+	def filterDay(self):
+		self.collapse_state = "day"
+		self.entrySelector.clear()
+		self.entrySelector.addItems(self.data.getNames("day"))
+
+	def filterOriginal(self):
+		self.collapse_state = "original"
+		self.entrySelector.clear()
+		self.entrySelector.addItems(self.data.getNames("original"))		
+
 	def setData(self, step_data):
 		self.status.setText("Step data loaded successfully")
 		self.data = step_data
+		self.collapse_state = "original"
 		self.entries = step_data.getNames()
 		self.entrySelector.addItems(self.entries)
 
 	def entrySelected(self):
-		print("Entry selected")
+		cur_row = self.entrySelector.currentRow() # Get the index of the selection
 
+		entry = self.data.get(cur_row, self.collapse_state) # Get the associated step entry
 
+		steps 		= entry.count
+		calories 	= entry.calorie
+		speed 		= entry.speed
+		distance 	= entry.distance
 
-
+		self.calorieValue.setText(str(calories))
+		self.stepValue.setText(str(steps))
+		self.distValue.setText(str(distance))
+		self.speedValue.setText(str(speed))
 
 def main():
 

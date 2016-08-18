@@ -77,25 +77,139 @@ class stepData:
 		print "Calories burned  = "+str(self.totalCalories())
 		print "Average speed    = "+str(self.avgSpeed())+" mph"
 
-	def getNames(self):
+	def getNames(self, type="original"):
 		names = []
 
-		for entry in self.data:
-			names.append(entry.getName())
+		if type == "original":
+			for entry in self.data:
+				names.append(entry.getName())
+		if type == "day":
+			for entry in self.data_days:
+				names.append(entry.getName())
+		if type == "month":
+			for entry in self.data_months:
+				names.append(entry.getName())
 
 		return names
 
-	def get(index):
-		return self.data[index]
+	def get(self, index, type="original"):
+		if type == "original":
+			return self.data[index]
+		if type == "day":
+			return self.data_days[index]
+		if type == "month":
+			return self.data_months[index]
+		else:
+			print("Unidentified class input to stepData.get() function.")
+
+	def collapse(self, increment):
+
+		new_data = []
+
+		if increment == "day":
+			# Combining all entries of the same day
+
+			day = stepEntry() # Create blank stepEntry for first day
+			first = True # This is the first day
+
+			for next_day in self.data:
+
+				date = next_day.start_time
+
+				date = date.split(" ") # Split the date into date and time
+
+				date = date[0] # Save only the date portion, drop the time
+
+				date_portions = date.split("-") # Split the date into year, month, day
+
+				if first == True: # If this is the first day
+					first = False
+					day.start_time 	= date
+					day.speed 		= float(next_day.speed)
+					day.count 		= int(next_day.count)
+					day.calorie 	= float(next_day.calorie)
+					day.distance 	= float(next_day.distance)
+
+				elif date == day.start_time: # If we should add the next_day values to the current day
+					# need to add functionality to average speeds together here
+					day.count 		+= int(next_day.count)
+					day.calorie 	+= float(next_day.calorie)
+					day.distance 	+= float(next_day.distance)
+
+				else: # If we need to create a new day
+					new_data.append(day)
+					day = stepEntry()
+					day.start_time 	= date
+					day.speed 		= float(next_day.speed)
+					day.count 		= int(next_day.count)
+					day.distance 	= float(next_day.distance)
+					day.calorie 	= float(next_day.calorie)
+
+			new_data.append(day)
+			self.data_days = new_data
+
+		if increment == "month":
+			# Combining all entries of the same month
+
+			day = stepEntry() # Create blank stepEntry for first day
+			first = True # This is the first day
+
+			for next_day in self.data:
+
+				date = next_day.start_time
+
+				date = date.split(" ") # Split the date into date and time
+
+				date = date[0] # Save only the date portion, drop the time
+
+				date_portions = date.split("-") # Split the date into year, month, day
+
+				date = date_portions[0]+"-"+date_portions[1] # Save as the year-month
+
+				if first == True: # If this is the first day
+					first = False
+					day.start_time 	= date
+					day.speed 		= float(next_day.speed)
+					day.count 		= int(next_day.count)
+					day.calorie 	= float(next_day.calorie)
+					day.distance 	= float(next_day.distance)
+
+				elif date == day.start_time: # If we should add the next_day values to the current day
+					# need to add functionality to average speeds together here
+					day.count 		+= int(next_day.count)
+					day.calorie 	+= float(next_day.calorie)
+					day.distance 	+= float(next_day.distance)
+
+				else: # If we need to create a new day
+					new_data.append(day)
+					day = stepEntry()
+					day.start_time 	= date
+					day.speed 		= float(next_day.speed)
+					day.count 		= int(next_day.count)
+					day.distance 	= float(next_day.distance)
+					day.calorie 	= float(next_day.calorie)
+
+			new_data.append(day)
+			self.data_months = new_data
+
+		else:
+			print "Collapse increment not recognized."
 
 
 class stepEntry:
 	# Holds a single step entry
 	
-	def __init__(self, fileLine):
+	def __init__(self, fileLine=None):
 
 		self.members = ["time_offset","end_time","speed","pkg_name","start_time","count","sample_position_type","calorie","distance","datauuid","deviceuuid","update_time","create_time"]
 		cur_position = 0 # The first element iterator
+
+		if fileLine == None:
+
+			for cur_member in self.members:
+				self.__dict__[cur_member] = ""
+
+			return
 
 		for cur_member in self.members:
 			comma 						= fileLine.find(",", cur_position) # The next comma location
